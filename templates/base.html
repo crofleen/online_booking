@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#4f46e5">
+  <title>{% block title %}Онлайн-бронирование услуг{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="/">
+    <span class="brand-mark">Б</span>
+    <span>Онлайн-бронирование<small>сервис заказа услуг</small></span>
+  </a>
+
+  <button class="burger" type="button" aria-label="Открыть меню" aria-expanded="false">
+    <span></span>
+  </button>
+
+  <nav class="menu">
+    <a href="/" class="{% if request.path == '/' %}active{% endif %}">Каталог</a>
+    {% if user.is_authenticated %}
+      {% if user.is_staff %}
+        <a href="/operator/" class="{% if request.path == '/operator/' %}active{% endif %}">Календарь</a>
+        <a href="/operator/orders/" class="{% if '/operator/orders' in request.path %}active{% endif %}">Заказы</a>
+        <a href="/operator/slots/">Слоты</a>
+        <a href="/operator/report/">Отчёты</a>
+        <a href="/operator/tariffs/">Тарифы</a>
+        <a href="/operator/claim/">Новая заявка</a>
+      {% else %}
+        <a href="/account/" class="{% if '/account' in request.path %}active{% endif %}">Мои заказы</a>
+        <a href="/account/notifications/">Уведомления</a>
+      {% endif %}
+      <span class="user">{{ user.get_username }}</span>
+      <form method="post" action="/accounts/logout/" class="inline">{% csrf_token %}
+        <button class="link" type="submit">Выйти</button>
+      </form>
+    {% else %}
+      <a href="/accounts/login/" class="{% if '/login' in request.path %}active{% endif %}">Войти</a>
+      <a class="btn small" href="/accounts/register/">Регистрация</a>
+    {% endif %}
+  </nav>
+</header>
+
+<main class="page">
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li class="message {{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <span>Демонстрационная сборка системы онлайн-бронирования и заказа услуг</span>
+  <span>© 2026</span>
+</footer>
+
+<script src="{% static 'js/app.js' %}" defer></script>
+</body>
+</html>

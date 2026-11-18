@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load formatting %}
+{% block title %}Заказ №{{ order.id }}{% endblock %}
+{% block content %}
+<div class="order-head">
+  <h1>Заказ №{{ order.id }}</h1>
+  <span class="badge {{ order.status }}">{{ order.get_status_display }}</span>
+</div>
+<p class="lead">{{ order.slot.date|date:"d.m.Y" }}, {{ order.slot.time_from|time:"H:i" }}–{{ order.slot.time_to|time:"H:i" }} ·
+  {{ order.executor.full_name }}</p>
+
+<div class="row">
+  <section class="card">
+    <h3>Статус заказа</h3>
+    <ul class="timeline">
+      <li class="done">
+        <span class="dot">1</span>
+        <div><b>Заявка создана</b><br><small>{{ order.created_at|date:"d.m.Y H:i" }}</small></div>
+      </li>
+      <li class="{% if order.status == 'confirmed' or order.status == 'done' %}done{% elif order.status == 'cancelled' %}done{% else %}current{% endif %}">
+        <span class="dot">2</span>
+        <div><b>{% if order.status == 'cancelled' %}Заказ отменён{% else %}Запись подтверждена и оплачена{% endif %}</b><br>
+          <small>{% if order.payments.all %}{{ order.payments.first.get_status_display }}{% else %}ожидает оплату{% endif %}</small></div>
+      </li>
+      <li class="{% if order.status == 'done' %}done{% else %}current{% endif %}">
+        <span class="dot">3</span>
+        <div><b>Услуга выполнена</b><br><small>акт и чек формируются автоматически</small></div>
+      </li>
+    </ul>
+
+    <h3 style="margin-top: 22px;">Детали</h3>
+    <div class="detail-list">
+      <div><span class="label">Услуга</span><span class="value">
+        {% for item in order.items.all %}{{ item.service.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+      </span></div>
+      <div><span class="label">Адрес</span><span class="value">{{ order.client.address }}</span></div>
+      <div><span class="label">Сумма</span><span class="value">{{ order.total_sum|rub }}</span></div>
+      <div><span class="label">Способ оплаты</span><span class="value">{{ order.payment_method }}</span></div>
+    </div>
+
+    <div class="actions">
+      {% if order.status == "new" or order.status == "confirmed" %}
+        <form method="post" action="{% url 'cancel_order' order.id %}" data-confirm="Отменить заказ?">
+          {% csrf_token %}<button class="btn danger small" type="submit">Отменить заказ</button>
+        </form>
+      {% endif %}
+      <a class="btn secondary small" href="/">В каталог</a>
+      {% if user.is_authenticated and not user.is_staff %}
+        <a class="btn ghost small" href="/account/">Мои заказы</a>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>Платежи</h3>
+    {% if order.payments.all %}
+      <div class="table-wrap" style="box-shadow: none; border: 0;">
+        <table>
+          <thead><tr><th>Транзакция</th><th class="num">Сумма</th><th>Статус</th></tr></thead>
+          <tbody>
+          {% for payment in order.payments.all %}
+            <tr><td>{{ payment.transaction_id }}</td><td class="num">{{ payment.amount|rub }}</td>
+              <td>{{ payment.get_status_display }}</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="muted">Платежей пока нет.</p>
+    {% endif %}
+
+    <h3 style="margin-top: 20px;">Уведомления</h3>
+    {% if order.notifications.all %}
+      <div class="stack">
+        {% for item in order.notifications.all|slice:":4" %}
+          <div>
+            <b style="font-size: 14px;">{{ item.subject }}</b><br>
+            <span class="muted">{{ item.created_at|date:"d.m.Y H:i" }} · {{ item.recipient }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">Уведомлений пока нет.</p>
+    {% endif %}
+  </section>
+</div>
+
+{% if order.status == "done" %}
+  <section class="card" style="margin-top: 18px;">
+    <h3>Отзыв о выполнении</h3>
+    {% if review %}
+      <p><span class="rating">★ {{ review.rating }}/5</span> {{ review.comment }}</p>
+    {% else %}
+      <form method="post" action="{% url 'leave_review' order.id %}">
+        {% csrf_token %}
+        <div class="field">
+          <label for="rating">Оценка</label>
+          <select id="rating" name="rating">
+            <option value="5">5 — отлично</option>
+            <option value="4">4 — хорошо</option>
+            <option value="3">3 — нормально</option>
+            <option value="2">2 — плохо</option>
+            <option value="1">1 — очень плохо</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="comment">Комментарий</label>
+          <textarea id="comment" name="comment" placeholder="Что понравилось, что можно улучшить"></textarea>
+        </div>
+        <button class="btn" type="submit">Отправить отзыв</button>
+      </form>
+    {% endif %}
+  </section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Вход{% endblock %}
+{% block content %}
+<div class="row" style="max-width: 860px; margin: 0 auto;">
+  <section class="card">
+    <h1>Вход</h1>
+    <p class="lead">Клиенты входят по номеру телефона, сотрудники — по логину.</p>
+    <form method="post">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <ul class="form-errors">{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+      {% endif %}
+      <div class="field">
+        <label for="id_username">Телефон или логин</label>
+        <input id="id_username" type="text" name="username" autocomplete="username" required autofocus
+               value="{{ form.username.value|default:'' }}">
+      </div>
+      <div class="field">
+        <label for="id_password">Пароль</label>
+        <input id="id_password" type="password" name="password" autocomplete="current-password" required>
+      </div>
+      <button class="btn block" type="submit">Войти</button>
+    </form>
+    <p class="muted" style="margin-top: 14px;">
+      Нет аккаунта? <a href="/accounts/register/">Зарегистрируйтесь</a> — это займёт минуту.
+    </p>
+  </section>
+
+  <section class="card">
+    <h3>Демонстрационные доступы</h3>
+    <div class="detail-list">
+      <div><span class="label">Оператор</span><span class="value">operator / operator123</span></div>
+      <div><span class="label">Администратор</span><span class="value">admin / admin123</span></div>
+      <div><span class="label">Клиент</span><span class="value">+79001112233 / client123</span></div>
+    </div>
+    <p class="muted" style="margin-top: 14px;">Оператор попадает в рабочее место сразу после входа,
+      клиент — в личный кабинет с историей заказов.</p>
+  </section>
+</div>
+{% endblock %}

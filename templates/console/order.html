@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load formatting %}
+{% block title %}Заказ №{{ order.id }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/operator/orders/">← Реестр заказов</a></p>
+<div class="order-head">
+  <h1>Заказ №{{ order.id }}</h1>
+  <span class="badge {{ order.status }}">{{ order.get_status_display }}</span>
+  <span class="muted">создан {{ order.created_at|date:"d.m.Y H:i" }}</span>
+</div>
+
+<div class="row">
+  <section class="card">
+    <h3>Клиент и визит</h3>
+    <div class="detail-list">
+      <div><span class="label">Клиент</span><span class="value">{{ order.client.last_name }} {{ order.client.first_name }}</span></div>
+      <div><span class="label">Телефон</span><span class="value">{{ order.client.phone }}</span></div>
+      <div><span class="label">Адрес</span><span class="value">{{ order.client.address }}</span></div>
+      <div><span class="label">Исполнитель</span><span class="value">
+        <a href="{% url 'operator_executor' order.executor.id %}">{{ order.executor.full_name }}</a></span></div>
+      <div><span class="label">Слот</span><span class="value">{{ order.slot.date|date:"d.m.Y" }},
+        {{ order.slot.time_from|time:"H:i" }}–{{ order.slot.time_to|time:"H:i" }}</span></div>
+      <div><span class="label">Сумма</span><span class="value">{{ order.total_sum|rub }}</span></div>
+      <div><span class="label">Способ оплаты</span><span class="value">{{ order.payment_method }}</span></div>
+    </div>
+
+    <div class="actions">
+      {% if order.status == "new" %}
+        <form method="post" action="{% url 'operator_order_action' order.id 'confirm' %}">
+          {% csrf_token %}<button class="btn" type="submit">Подтвердить</button></form>
+      {% endif %}
+      {% if order.status == "confirmed" %}
+        <form method="post" action="{% url 'operator_order_action' order.id 'close' %}"
+              data-confirm="Закрыть заказ и сформировать акт?">
+          {% csrf_token %}<button class="btn" type="submit">Закрыть заказ</button></form>
+      {% endif %}
+      {% if order.status == "new" or order.status == "confirmed" %}
+        <form method="post" action="{% url 'operator_order_action' order.id 'cancel' %}"
+              data-confirm="Отменить заказ и вернуть оплату?">
+          {% csrf_token %}<button class="btn danger" type="submit">Отменить</button></form>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>Позиции</h3>
+    <div class="table-wrap" style="box-shadow: none; border: 0;">
+      <table>
+        <thead><tr><th>Услуга</th><th class="num">Кол-во</th><th class="num">Сумма</th></tr></thead>
+        <tbody>
+        {% for item in order.items.all %}
+          <tr><td>{{ item.service.name }}<br><span class="muted">{{ item.price|rub }}</span></td>
+            <td class="num">{{ item.qty }}</td><td class="num">{{ item.amount|rub }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="margin-top: 20px;">Платежи</h3>
+    {% for payment in order.payments.all %}
+      <div class="detail-list">
+        <div><span class="label">{{ payment.transaction_id }}</span>
+          <span class="value">{{ payment.amount|rub }} · {{ payment.get_status_display }}</span></div>
+      </div>
+    {% empty %}
+      <p class="muted">платежей нет</p>
+    {% endfor %}
+  </section>
+</div>
+
+{% if order.status == "new" or order.status == "confirmed" %}
+  <section class="card" style="margin-top: 18px;">
+    <h3>Перенос на другой слот</h3>
+    <form class="toolbar" method="post" style="margin-bottom: 0;"
+          action="{% url 'operator_order_action' order.id 'reschedule' %}">
+      {% csrf_token %}
+      <div class="field" style="min-width: 320px; flex: 1;">
+        <label for="slot_id">Свободные слоты</label>
+        <select id="slot_id" name="slot_id" required>
+          {% for slot in free_slots %}
+            <option value="{{ slot.id }}">{{ slot.date|date:"d.m" }} {{ slot.time_from|time:"H:i" }} ·
+              {{ slot.executor.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn secondary" type="submit">Перенести</button>
+    </form>
+  </section>
+{% endif %}
+
+<section class="card" style="margin-top: 18px;">
+  <h3>Уведомления по заказу</h3>
+  {% for item in order.notifications.all %}
+    <div class="order-row">
+      <div><h4>{{ item.subject }}</h4><div class="meta">{{ item.recipient }}</div></div>
+      <div class="right"><span class="muted">{{ item.created_at|date:"d.m.Y H:i" }}</span></div>
+    </div>
+  {% empty %}
+    <p class="muted">уведомлений нет</p>
+  {% endfor %}
+</section>
+{% endblock %}

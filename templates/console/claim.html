@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Новая заявка{% endblock %}
+{% block content %}
+<div class="order-head"><h1>Новая заявка</h1></div>
+<p class="lead">Оформление по звонку: данные клиента, услуга и свободный слот.
+  Слот удерживается 10 минут до подтверждения оплаты.</p>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="row">
+    <section class="card">
+      <h3>Клиент</h3>
+      <div class="field"><label for="last_name">Фамилия</label><input id="last_name" type="text" name="last_name" required></div>
+      <div class="field"><label for="first_name">Имя</label><input id="first_name" type="text" name="first_name" required></div>
+      <div class="field"><label for="phone">Телефон</label><input id="phone" type="tel" name="phone" placeholder="+7 916 123-45-67" required></div>
+      <div class="field"><label for="email">Электронная почта</label><input id="email" type="email" name="email"></div>
+      <div class="field"><label for="address">Адрес визита</label><input id="address" type="text" name="address" required></div>
+    </section>
+
+    <section class="card">
+      <h3>Заказ</h3>
+      <div class="field">
+        <label for="service_id">Услуга</label>
+        <select id="service_id" name="service_id" required>
+          {% for service in services %}
+            <option value="{{ service.id }}">{{ service.name }} — {{ service.base_price }} ₽</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="slot_id">Свободный слот</label>
+        <select id="slot_id" name="slot_id" required>
+          {% for slot in slots %}
+            <option value="{{ slot.id }}">{{ slot.date|date:"d.m" }} {{ slot.time_from|time:"H:i" }} ·
+              {{ slot.executor.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="distance_km">Удалённость, км</label>
+        <input id="distance_km" type="number" name="distance_km" value="0" min="0" max="200">
+      </div>
+      <label class="checkbox"><input type="checkbox" name="urgent"> <span>Срочный выезд</span></label>
+      <div class="actions"><button class="btn" type="submit">Создать заявку</button></div>
+    </section>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Управление слотами{% endblock %}
+{% block content %}
+<div class="order-head"><h1>Управление слотами</h1></div>
+<p class="lead">Добавьте рабочие интервалы исполнителя на несколько дней вперёд.
+  Занятые слоты удалить нельзя.</p>
+
+<div class="row">
+  <section class="card">
+    <h3>Добавить слоты</h3>
+    <form method="post">
+      {% csrf_token %}
+      <div class="field">
+        <label for="executor_id">Исполнитель</label>
+        <select id="executor_id" name="executor_id" required>
+          {% for executor in executors %}
+            <option value="{{ executor.id }}">{{ executor.full_name }} · {{ executor.geo_zone }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field"><label for="date_from">Первая дата</label>
+        <input id="date_from" type="date" name="date_from" value="{{ today|date:'Y-m-d' }}" required></div>
+      <div class="field"><label for="time_from">Время начала</label>
+        <input id="time_from" type="time" name="time_from" value="10:00" required></div>
+      <div class="field"><label for="duration">Длительность, мин</label>
+        <input id="duration" type="number" name="duration" value="90" min="30" max="480" step="30"></div>
+      <div class="field"><label for="days">Сколько дней подряд</label>
+        <input id="days" type="number" name="days" value="1" min="1" max="60"></div>
+      <button class="btn" type="submit">Добавить</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h3>Ближайшие слоты</h3>
+    <div class="table-wrap" style="box-shadow: none; border: 0; max-height: 520px; overflow-y: auto;">
+      <table>
+        <thead><tr><th>Дата</th><th>Время</th><th>Исполнитель</th><th>Статус</th><th></th></tr></thead>
+        <tbody>
+        {% for slot in slots %}
+          <tr>
+            <td>{{ slot.date|date:"d.m.Y" }}</td>
+            <td>{{ slot.time_from|time:"H:i" }}–{{ slot.time_to|time:"H:i" }}</td>
+            <td>{{ slot.executor.full_name }}</td>
+            <td><span class="badge {{ slot.status }}">{{ slot.get_status_display }}</span></td>
+            <td>
+              {% if slot.status == "free" %}
+                <form method="post" data-confirm="Удалить слот?">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="slot_id" value="{{ slot.id }}">
+                  <button class="btn ghost small" type="submit">Удалить</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="table-empty">слотов нет</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

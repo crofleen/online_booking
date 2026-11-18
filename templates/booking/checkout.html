@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load formatting %}
+{% block title %}Оплата заказа №{{ order.id }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/">← Каталог</a></p>
+
+<div class="steps">
+  <span class="step done"><b>1</b> Дата и время</span>
+  <span class="step done"><b>2</b> Контакты</span>
+  <span class="step active"><b>3</b> Оплата</span>
+</div>
+
+<div class="order-head">
+  <h1>Оплата заказа №{{ order.id }}</h1>
+  <span class="badge {{ order.status }}">{{ order.get_status_display }}</span>
+</div>
+<p class="lead">{{ order.slot.date|date:"d.m.Y" }}, {{ order.slot.time_from|time:"H:i" }}–{{ order.slot.time_to|time:"H:i" }} ·
+  {{ order.executor.full_name }}</p>
+
+<div class="row">
+  <section class="card">
+    <h3>Состав заказа</h3>
+    <div class="table-wrap" style="box-shadow: none; border: 0;">
+      <table>
+        <thead><tr><th>Услуга</th><th class="num">Кол-во</th><th class="num">Цена</th><th class="num">Сумма</th></tr></thead>
+        <tbody>
+        {% for item in order.items.all %}
+          <tr>
+            <td>{{ item.service.name }}</td>
+            <td class="num">{{ item.qty }}</td>
+            <td class="num">{{ item.price|rub }}</td>
+            <td class="num">{{ item.amount|rub }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="total"><span>Итого к оплате</span><b>{{ order.total_sum|rub }}</b></div>
+    <div class="detail-list" style="margin-top: 14px;">
+      <div><span class="label">Клиент</span><span class="value">{{ order.client.last_name }} {{ order.client.first_name }}</span></div>
+      <div><span class="label">Телефон</span><span class="value">{{ order.client.phone }}</span></div>
+      <div><span class="label">Адрес</span><span class="value">{{ order.client.address }}</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>Способ оплаты</h3>
+    <form method="post" action="{% url 'pay' order.id %}">
+      {% csrf_token %}
+      <div class="choice" style="margin-bottom: 16px;">
+        <label><input type="radio" name="method" value="card" checked> Картой</label>
+        <label><input type="radio" name="method" value="sbp"> СБП</label>
+        <label><input type="radio" name="method" value="cash"> При визите</label>
+      </div>
+      <div class="field">
+        <label for="card_number">Номер карты (демонстрационный режим)</label>
+        <input id="card_number" type="text" name="card_number" inputmode="numeric"
+               value="4111 1111 1111 1111" placeholder="0000 0000 0000 0000">
+        <span class="hint">Карта с окончанием 0000 имитирует отказ банка.</span>
+      </div>
+      <button class="btn block" type="submit">Оплатить {{ order.total_sum|rub }}</button>
+    </form>
+    <p class="muted" style="margin-top: 12px;">
+      Данные карты обрабатываются платёжным провайдером и не сохраняются в системе.
+      Слот удерживается 10 минут — после этого запись освобождается автоматически.
+    </p>
+    <form method="post" action="{% url 'cancel_order' order.id %}" data-confirm="Отменить заказ?">
+      {% csrf_token %}
+      <button class="btn ghost small" type="submit">Отменить заказ</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

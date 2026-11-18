@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load formatting %}
+{% block title %}Каталог услуг{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Бытовые услуги рядом с вами</h1>
+  <p>Выберите услугу, свободное время мастера и оплатите онлайн — запись подтвердится
+    за пару минут. Более 12 тысяч проверенных исполнителей.</p>
+  <form class="search" method="get">
+    <input type="text" name="q" value="{{ query }}" placeholder="Что нужно сделать? Например, собрать шкаф"
+           aria-label="Поиск услуги">
+    <button class="btn" type="submit">Найти</button>
+  </form>
+</section>
+
+<div class="chips">
+  <a class="chip {% if not active_category %}active{% endif %}" href="/">Все услуги</a>
+  {% for category in categories %}
+    <a class="chip {% if category == active_category %}active{% endif %}"
+       href="?category={{ category|urlencode }}{% if query %}&q={{ query|urlencode }}{% endif %}">
+      {{ category }}</a>
+  {% endfor %}
+</div>
+
+{% for category, services in grouped.items %}
+  <h2>{{ category }}</h2>
+  <div class="grid">
+    {% for service in services %}
+      <article class="card service-card">
+        <h3>{{ service.name }}</h3>
+        <div class="service-meta">
+          <span>{{ service.duration_min }} мин</span>
+          {% if service.avg_rating %}<span class="rating">★ {{ service.avg_rating|floatformat:1 }}</span>{% endif %}
+          <span>{{ service.orders_count|plural_ru:"заказ,заказа,заказов" }}</span>
+        </div>
+        <div class="price">{{ service.base_price|rub }} <small>за визит</small></div>
+        <a class="btn secondary" href="{% url 'service_detail' service.id %}">Выбрать время</a>
+      </article>
+    {% endfor %}
+  </div>
+{% empty %}
+  <div class="empty">
+    <b>Ничего не найдено</b>
+    Попробуйте изменить запрос или выбрать другую категорию.
+  </div>
+{% endfor %}
+{% endblock %}

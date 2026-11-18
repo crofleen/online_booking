@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load formatting %}
+{% block title %}{{ service.name }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/">← Каталог</a> / {{ service.category }}</p>
+
+<div class="order-head">
+  <h1>{{ service.name }}</h1>
+  {% if service.avg_rating %}<span class="rating">★ {{ service.avg_rating|floatformat:1 }}</span>{% endif %}
+</div>
+<p class="lead">{{ service.category }} · длительность {{ service.duration_min }} мин ·
+  базовая цена {{ service.base_price|rub }}</p>
+
+<div class="steps">
+  <span class="step active"><b>1</b> Дата и время</span>
+  <span class="step"><b>2</b> Контакты</span>
+  <span class="step"><b>3</b> Оплата</span>
+</div>
+
+<section class="card" style="margin-bottom: 18px;">
+  <h3>Выберите дату</h3>
+  <div class="dates">
+    {% for day in dates %}
+      <a class="date {% if day == selected_date %}active{% endif %} {% if day not in available %}empty{% endif %}"
+         href="?date={{ day|date:'Y-m-d' }}">
+        <b>{{ day|date:"d" }}</b>
+        <span>{{ day|date:"M" }}</span>
+        <small>{% if day in available %}есть места{% else %}нет мест{% endif %}</small>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+<form method="post" action="{% url 'create_order' %}" data-calc
+      data-base-price="{{ service.base_price }}"
+      data-urgent-rate="{{ tariff.urgency_rate }}"
+      data-distance-rate="{{ tariff.distance_rate }}">
+  {% csrf_token %}
+  <input type="hidden" name="service_id" value="{{ service.id }}">
+
+  <div class="row">
+    <section class="card">
+      <h3>Свободное время на {{ selected_date|date:"d.m.Y" }}</h3>
+      {% if groups %}
+        {% for executor, items in groups.items %}
+          <div class="slot-group">
+            <h4>{{ executor.full_name }} · рейтинг {{ executor.rating }} · {{ executor.geo_zone }}</h4>
+            <div class="slots">
+              {% for slot in items %}
+                <label class="slot">
+                  <input type="radio" name="slot_id" value="{{ slot.id }}"
+                         {% if forloop.parentloop.first and forloop.first %}checked{% endif %} required>
+                  <span>{{ slot.time_from|time:"H:i" }}<small>до {{ slot.time_to|time:"H:i" }}</small></span>
+                </label>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty">
+          <b>Свободных слотов нет</b>
+          Выберите другую дату в календаре выше.
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <h3>Оформление записи</h3>
+      {% if profile %}
+        <div class="detail-list" style="margin-bottom: 14px;">
+          <div><span class="label">Клиент</span><span class="value">{{ profile.display_name }}</span></div>
+          <div><span class="label">Телефон</span><span class="value">{{ profile.phone }}</span></div>
+        </div>
+        <div class="field">
+          <label for="address">Адрес визита</label>
+          <input id="address" type="text" name="address" value="{{ profile.address }}" required>
+        </div>
+      {% else %}
+        <div class="field">
+          <label for="last_name">Фамилия</label>
+          <input id="last_name" type="text" name="last_name" required>
+        </div>
+        <div class="field">
+          <label for="first_name">Имя</label>
+          <input id="first_name" type="text" name="first_name" required>
+        </div>
+        <div class="field">
+          <label for="phone">Телефон</label>
+          <input id="phone" type="tel" name="phone" placeholder="+7 916 123-45-67" required>
+        </div>
+        <div class="field">
+          <label for="email">Электронная почта</label>
+          <input id="email" type="email" name="email">
+        </div>
+        <div class="field">
+          <label for="address">Адрес визита</label>
+          <input id="address" type="text" name="address" required>
+        </div>
+        <label class="checkbox">
+          <input type="checkbox" name="consent" required>
+          <span>Согласен на обработку персональных данных</span>
+        </label>
+      {% endif %}
+
+      <div class="field" style="margin-top: 14px;">
+        <label for="distance_km">Удалённость от зоны обслуживания, км</label>
+        <input id="distance_km" type="number" name="distance_km" value="0" min="0" max="200">
+      </div>
+      <label class="checkbox">
+        <input type="checkbox" name="urgent">
+        <span>Срочный выезд (коэффициент {{ tariff.urgency_rate }})</span>
+      </label>
+
+      <div class="total">
+        <span class="muted">Предварительная стоимость</span>
+        <b><span data-price-output>{{ service.base_price|money }}</span> ₽</b>
+      </div>
+
+      <div class="actions">
+        <button class="btn block" type="submit" {% if not slots_count %}disabled{% endif %}>
+          Забронировать и перейти к оплате
+        </button>
+      </div>
+      {% if not profile %}
+        <p class="muted" style="margin-top: 10px;">
+          Уже есть аккаунт? <a href="/accounts/login/?next={{ request.path }}">Войдите</a>,
+          чтобы не заполнять данные повторно.
+        </p>
+      {% endif %}
+      <p class="muted">Слот удерживается 10 минут. Отмена без штрафа — не позднее чем за 24 часа.</p>
+    </section>
+  </div>
+</form>
+{% endblock %}

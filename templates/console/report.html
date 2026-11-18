@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load formatting %}
+{% block title %}Отчёт о загрузке{% endblock %}
+{% block content %}
+<div class="order-head">
+  <h1>Отчёт о загрузке</h1>
+  <span class="muted">{{ period_start|date:"d.m.Y" }} — {{ period_end|date:"d.m.Y" }}</span>
+</div>
+
+<form class="toolbar" method="get">
+  <div class="field"><label for="start">С</label>
+    <input id="start" type="date" name="start" value="{{ period_start|date:'Y-m-d' }}"></div>
+  <div class="field"><label for="end">По</label>
+    <input id="end" type="date" name="end" value="{{ period_end|date:'Y-m-d' }}"></div>
+  <button class="btn" type="submit">Пересчитать</button>
+</form>
+
+<div class="kpi">
+  <div class="card"><span class="caption">Заказов</span><span class="value">{{ orders_total }}</span></div>
+  <div class="card"><span class="caption">Выполнено</span><span class="value">{{ orders_done }}</span></div>
+  <div class="card"><span class="caption">Отменено</span><span class="value">{{ orders_cancelled }} <small>{{ cancel_rate }} %</small></span></div>
+  <div class="card"><span class="caption">Средний чек</span><span class="value">{{ avg_check|default:0|money }} <small>₽</small></span></div>
+  <div class="card"><span class="caption">Выручка</span><span class="value">{{ revenue|default:0|money }} <small>₽</small></span></div>
+  <div class="card"><span class="caption">Загрузка слотов</span><span class="value">{{ load_percent }} <small>%</small></span></div>
+</div>
+
+<section class="card" style="margin-bottom: 18px;">
+  <h3>Заказы по дням</h3>
+  <div class="chart">
+    {% for point in daily %}
+      <div class="bar" title="{{ point.date|date:'d.m.Y' }}: {{ point.count }}">
+        <b>{{ point.count }}</b>
+        <span style="height: {{ point.percent }}%;"></span>
+        <small>{{ point.date|date:"d.m" }}</small>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="card">
+  <h3>Показатели по исполнителям</h3>
+  <div class="table-wrap" style="box-shadow: none; border: 0;">
+    <table>
+      <thead><tr><th>Исполнитель</th><th class="num">Заказов</th><th class="num">Выполнено</th><th class="num">Выручка</th></tr></thead>
+      <tbody>
+      {% for executor in by_executor %}
+        <tr>
+          <td><a href="{% url 'operator_executor' executor.id %}">{{ executor.full_name }}</a></td>
+          <td class="num">{{ executor.orders_count }}</td>
+          <td class="num">{{ executor.done_count }}</td>
+          <td class="num">{{ executor.revenue|default:0|money }} ₽</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="4" class="table-empty">данных за период нет</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="muted" style="margin-top: 12px;">Отчёт формируется автоматически и не содержит
+    персональных данных клиентов.</p>
+</section>
+{% endblock %}

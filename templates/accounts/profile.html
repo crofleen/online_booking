@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load formatting %}
+{% block title %}Личный кабинет{% endblock %}
+{% block content %}
+<div class="profile-head">
+  <div class="avatar">{{ profile.first_name|first|upper }}</div>
+  <div>
+    <h1>{{ profile.display_name }}</h1>
+    <div class="muted">{{ profile.phone }}{% if profile.email %} · {{ profile.email }}{% endif %}</div>
+  </div>
+  <div class="spacer"></div>
+  <a class="btn secondary small" href="/">Записаться на услугу</a>
+</div>
+
+<div class="kpi">
+  <div class="card"><span class="caption">Всего заказов</span><span class="value">{{ orders_total }}</span></div>
+  <div class="card"><span class="caption">Активных</span><span class="value">{{ active_total }}</span></div>
+  <div class="card"><span class="caption">Отзывов</span><span class="value">{{ reviews_total }}</span></div>
+</div>
+
+<div class="tabs">
+  <a href="/account/" class="active">Мои заказы</a>
+  <a href="/account/notifications/">Уведомления</a>
+  <a href="#profile-form">Контактные данные</a>
+</div>
+
+<div class="row">
+  <section class="card">
+    <h3>История заказов</h3>
+    {% for order in orders %}
+      <div class="order-row">
+        <div>
+          <h4><a href="{% url 'order_status' order.id %}">Заказ №{{ order.id }}</a></h4>
+          <div class="meta">
+            {% for item in order.items.all %}{{ item.service.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+          </div>
+          <div class="meta">{{ order.slot.date|date:"d.m.Y" }}, {{ order.slot.time_from|time:"H:i" }} ·
+            {{ order.executor.full_name }}</div>
+        </div>
+        <div class="right">
+          <span class="badge {{ order.status }}">{{ order.get_status_display }}</span>
+          <b>{{ order.total_sum|rub }}</b>
+          <div class="actions" style="margin: 0; justify-content: flex-end;">
+            <a class="btn ghost small" href="{% url 'order_status' order.id %}">Открыть</a>
+            <form method="post" action="{% url 'repeat_order' order.id %}">{% csrf_token %}
+              <button class="btn secondary small" type="submit">Повторить</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="empty">
+        <b>Заказов пока нет</b>
+        Выберите услугу в каталоге — свободное время мастера видно сразу.
+      </div>
+    {% endfor %}
+  </section>
+
+  <section class="card" id="profile-form">
+    <h3>Контактные данные</h3>
+    <form method="post">
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="field">
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<span class="hint" style="color: #dc2626;">{{ error }}</span>{% endfor %}
+        </div>
+      {% endfor %}
+      <button class="btn" type="submit">Сохранить</button>
+    </form>
+    <p class="muted" style="margin-top: 12px;">
+      Телефон изменить нельзя: он используется как логин. Для смены обратитесь в поддержку.
+    </p>
+  </section>
+</div>
+{% endblock %}

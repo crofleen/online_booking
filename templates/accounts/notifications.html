@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Уведомления{% endblock %}
+{% block content %}
+<div class="profile-head">
+  <div class="avatar">{{ profile.first_name|first|upper }}</div>
+  <div>
+    <h1>Уведомления</h1>
+    <div class="muted">Напоминания и изменения статусов по вашим заказам</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <a href="/account/">Мои заказы</a>
+  <a href="/account/notifications/" class="active">Уведомления</a>
+</div>
+
+<section class="card">
+  {% for item in items %}
+    <div class="order-row">
+      <div>
+        <h4>{{ item.subject }}</h4>
+        <div class="meta">{{ item.body }}</div>
+        <div class="meta">{{ item.created_at|date:"d.m.Y H:i" }} · {{ item.recipient }}</div>
+      </div>
+      <div class="right">
+        <a class="btn ghost small" href="{% url 'order_status' item.order_id %}">Заказ №{{ item.order_id }}</a>
+      </div>
+    </div>
+  {% empty %}
+    <div class="empty">
+      <b>Уведомлений нет</b>
+      Здесь появятся напоминания о визитах и изменениях статуса заказов.
+    </div>
+  {% endfor %}
+</section>
+{% endblock %}

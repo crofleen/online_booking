@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Тарифные планы{% endblock %}
+{% block content %}
+<div class="order-head"><h1>Тарифные планы</h1></div>
+<p class="lead">Коэффициенты применяются к базовой цене услуги. Новый тариф действует
+  с текущей даты; ранее оформленные заказы сохраняют прежнюю стоимость.</p>
+
+<div class="row">
+  <section class="card">
+    <h3>Новый тариф</h3>
+    <form method="post">
+      {% csrf_token %}
+      <div class="field">
+        <label for="service_id">Услуга</label>
+        <select id="service_id" name="service_id" required>
+          {% for service in services %}
+            <option value="{{ service.id }}">{{ service.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field"><label for="urgency_rate">Коэффициент срочности</label>
+        <input id="urgency_rate" type="text" name="urgency_rate" value="1,15"></div>
+      <div class="field"><label for="distance_rate">Коэффициент удалённости</label>
+        <input id="distance_rate" type="text" name="distance_rate" value="1,20"></div>
+      <button class="btn" type="submit">Сохранить тариф</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h3>История тарифов</h3>
+    <div class="table-wrap" style="box-shadow: none; border: 0;">
+      <table>
+        <thead><tr><th>Услуга</th><th class="num">Срочность</th><th class="num">Удалённость</th><th>С даты</th></tr></thead>
+        <tbody>
+        {% for plan in plans %}
+          <tr><td>{{ plan.service.name }}</td>
+            <td class="num">{{ plan.urgency_rate }}</td>
+            <td class="num">{{ plan.distance_rate }}</td>
+            <td>{{ plan.valid_from|date:"d.m.Y" }}</td></tr>
+        {% empty %}
+          <tr><td colspan="4" class="table-empty">тарифы не заданы</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

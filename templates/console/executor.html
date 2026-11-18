@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% load formatting %}
+{% block title %}{{ executor.full_name }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/operator/">← Календарь</a></p>
+<div class="order-head">
+  <h1>{{ executor.full_name }}</h1>
+  <span class="badge {{ executor.status }}">{{ executor.get_status_display }}</span>
+  <span class="rating">★ {{ executor.rating }}</span>
+</div>
+<p class="lead">{{ executor.qualification }} · геозона {{ executor.geo_zone }} · {{ executor.phone }}</p>
+
+<div class="kpi">
+  <div class="card"><span class="caption">Всего заказов</span><span class="value">{{ stats.total|default:0 }}</span></div>
+  <div class="card"><span class="caption">Выполнено</span><span class="value">{{ stats.done|default:0 }}</span></div>
+  <div class="card"><span class="caption">Отменено</span><span class="value">{{ stats.cancelled|default:0 }}</span></div>
+  <div class="card"><span class="caption">Выручка</span><span class="value">{{ stats.revenue|default:0|money }} <small>₽</small></span></div>
+</div>
+
+<div class="row">
+  <section class="card">
+    <h3>Ближайшие слоты</h3>
+    <div class="table-wrap" style="box-shadow: none; border: 0;">
+      <table>
+        <thead><tr><th>Дата</th><th>Время</th><th>Статус</th></tr></thead>
+        <tbody>
+        {% for slot in slots %}
+          <tr><td>{{ slot.date|date:"d.m.Y" }}</td>
+            <td>{{ slot.time_from|time:"H:i" }}–{{ slot.time_to|time:"H:i" }}</td>
+            <td><span class="badge {{ slot.status }}">{{ slot.get_status_display }}</span></td></tr>
+        {% empty %}
+          <tr><td colspan="3" class="table-empty">слотов нет</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <h3>Последние заказы</h3>
+    <div class="table-wrap" style="box-shadow: none; border: 0;">
+      <table>
+        <thead><tr><th>Заказ</th><th>Дата</th><th class="num">Сумма</th><th>Статус</th></tr></thead>
+        <tbody>
+        {% for order in orders %}
+          <tr><td><a href="{% url 'operator_order' order.id %}">№{{ order.id }}</a></td>
+            <td>{{ order.slot.date|date:"d.m.Y" }}</td>
+            <td class="num">{{ order.total_sum|rub }}</td>
+            <td><span class="badge {{ order.status }}">{{ order.get_status_display }}</span></td></tr>
+        {% empty %}
+          <tr><td colspan="4" class="table-empty">заказов нет</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

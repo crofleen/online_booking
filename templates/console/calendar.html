@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Календарь загрузки{% endblock %}
+{% block content %}
+<div class="order-head">
+  <h1>Календарь загрузки</h1>
+  <span class="muted">{{ days.0|date:"d.m" }} — {{ days|last|date:"d.m.Y" }}</span>
+</div>
+
+<div class="kpi">
+  <div class="card"><span class="caption">Заказов сегодня</span><span class="value">{{ orders_today }}</span></div>
+  <div class="card"><span class="caption">Свободных слотов</span><span class="value">{{ free_slots }}</span></div>
+  <div class="card"><span class="caption">Исполнителей</span><span class="value">{{ rows|length }}</span></div>
+</div>
+
+<div class="toolbar">
+  <a class="btn ghost small" href="?start={{ prev_week }}">← Неделя</a>
+  <a class="btn ghost small" href="?start={{ next_week }}">Неделя →</a>
+  <div class="spacer"></div>
+  <a class="btn small" href="{% url 'operator_claim' %}">Новая заявка</a>
+  <a class="btn secondary small" href="{% url 'operator_slots' %}">Слоты</a>
+</div>
+
+<div class="calendar-scroll">
+  <div class="calendar">
+    <div class="calendar-grid">
+      <div class="calendar-cell calendar-head">Исполнитель</div>
+      {% for day in days %}
+        <div class="calendar-cell calendar-head {% if day == today %}today{% endif %}">{{ day|date:"D d.m" }}</div>
+      {% endfor %}
+
+      {% for row in rows %}
+        <div class="calendar-cell calendar-executor">
+          <a href="{% url 'operator_executor' row.executor.id %}">{{ row.executor.full_name }}</a>
+          <small>{{ row.executor.geo_zone }}</small>
+        </div>
+        {% for cell in row.cells %}
+          <div class="calendar-cell">
+            {% for slot in cell.slots %}
+              {% if slot.active_order %}
+                <a class="slot-mini busy" href="{% url 'operator_order' slot.active_order.id %}">
+                  {{ slot.time_from|time:"H:i" }} · №{{ slot.active_order.id }}</a>
+              {% elif slot.status == "blocked" %}
+                <span class="slot-mini blocked">{{ slot.time_from|time:"H:i" }} · удержание</span>
+              {% elif slot.status == "cancelled" %}
+                <span class="slot-mini cancelled">{{ slot.time_from|time:"H:i" }} · отменён</span>
+              {% else %}
+                <span class="slot-mini free">{{ slot.time_from|time:"H:i" }} · свободен</span>
+              {% endif %}
+            {% empty %}
+              <span class="muted">—</span>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="calendar-mobile">
+  {% for block in mobile %}
+    <div class="day-group">
+      <header>{{ block.date|date:"l, d.m.Y" }}</header>
+      {% for row in block.rows %}
+        <div class="executor-row">
+          <b><a href="{% url 'operator_executor' row.executor.id %}">{{ row.executor.full_name }}</a></b>
+          <div class="stack" style="gap: 6px;">
+            {% for slot in row.slots %}
+              {% if slot.active_order %}
+                <a class="slot-mini busy" href="{% url 'operator_order' slot.active_order.id %}">
+                  {{ slot.time_from|time:"H:i" }} · заказ №{{ slot.active_order.id }}</a>
+              {% elif slot.status == "blocked" %}
+                <span class="slot-mini blocked">{{ slot.time_from|time:"H:i" }} · удержание</span>
+              {% else %}
+                <span class="slot-mini free">{{ slot.time_from|time:"H:i" }} · свободен</span>
+              {% endif %}
+            {% empty %}
+              <span class="muted">нет слотов</span>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}
